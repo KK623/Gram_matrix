@@ -50,6 +50,7 @@ module PE_gram#(parameter WIDTH=8, DIMENSION=4)
     begin
     if(count<DIMENSION)
     begin
+     out_A<=in_A;
      out_B<=in_B;
      P_tmp<=0;
      P<=P+in_A*in_B;
@@ -58,7 +59,7 @@ module PE_gram#(parameter WIDTH=8, DIMENSION=4)
      else
      begin
      out_A<=in_A;
-      out_B<=in_B;
+     out_B<=in_B;
      P_tmp<=0;
      P<=in_A*in_B;
      en_o<=1;

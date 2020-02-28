@@ -27,46 +27,61 @@ G1,G2,G3
 );
 input clk,rst,en;
 input signed [DIMENSION*WIDTH-1:0] H1,H2,H3;
-output signed [3*WIDTH-1:0] G1,G2,G3;  //final matrix
+output reg signed [3*WIDTH-1:0] G1,G2,G3;  //final matrix
 
-reg count;
+reg [3:0] count;
 
-wire [WIDTH-1:0] r1[DIMENSION-1:0];
-wire [WIDTH-1:0] r2[DIMENSION-1:0];
-wire [WIDTH-1:0] r3[DIMENSION-1:0];
+reg [6:0] c_n;
+    
 
-wire [WIDTH-1:0] c1[DIMENSION-1:0];
-wire [WIDTH-1:0] c2[DIMENSION-1:0];
-wire [WIDTH-1:0] c3[DIMENSION-1:0];  //共轭转置
 
-wire [DIMENSION*WIDTH-1:0] P11;
-wire [DIMENSION*WIDTH-1:0] P21;
-wire [DIMENSION*WIDTH-1:0] P22;
-wire [DIMENSION*WIDTH-1:0] P31;
-wire [DIMENSION*WIDTH-1:0] P32;
-wire [DIMENSION*WIDTH-1:0] P33;
+wire [WIDTH-1:0] r1[DIMENSION+3:0];
+wire [WIDTH-1:0] r2[DIMENSION+3:0];
+wire [WIDTH-1:0] r3[DIMENSION+3:0];
 
+wire [WIDTH-1:0] c1[DIMENSION+3:0];
+wire [WIDTH-1:0] c2[DIMENSION+3:0];
+wire [WIDTH-1:0] c3[DIMENSION+5:0];  //共轭转置
+
+wire [WIDTH-1:0] P11;
+wire [WIDTH-1:0] P21;
+wire [WIDTH-1:0] P22;
+wire [WIDTH-1:0] P31;
+wire [WIDTH-1:0] P32;
+wire [WIDTH-1:0] P33;
+
+assign r2[0]=r2[4];
+assign r3[0]=r3[4];
+assign r3[1]=r3[5];
+
+assign c2[0]=c2[4];
+assign c2[1]=c2[5];
+
+assign c3[0]=c3[4];
+assign c3[1]=c3[5];
+assign c3[2]=c3[6];
+assign c3[3]=c3[7];
 
 genvar i; 
 generate
     for(i=0;i<DIMENSION;i=i+1)
        begin:assign_value
        assign r1[i]=H1[(i+1)*WIDTH-1:i*WIDTH];
-       assign r2[i]=H2[(i+1)*WIDTH-1:i*WIDTH];
-       assign r3[i]=H3[(i+1)*WIDTH-1:i*WIDTH];
+       assign r2[i+1]=H2[(i+1)*WIDTH-1:i*WIDTH];
+       assign r3[i+2]=H3[(i+1)*WIDTH-1:i*WIDTH];
        
        if(i<2)
        begin
        assign c1[i]=H1[(i+1)*WIDTH-1:i*WIDTH];
-       assign c2[i]=H2[(i+1)*WIDTH-1:i*WIDTH];
-       assign c3[i]=H3[(i+1)*WIDTH-1:i*WIDTH];
+       assign c2[i+2]=H2[(i+1)*WIDTH-1:i*WIDTH];
+       assign c3[i+4]=H3[(i+1)*WIDTH-1:i*WIDTH];
        end
        
        else
        begin
        assign c1[i]=-H1[(i+1)*WIDTH-1:i*WIDTH];
-       assign c2[i]=-H2[(i+1)*WIDTH-1:i*WIDTH];
-       assign c3[i]=-H3[(i+1)*WIDTH-1:i*WIDTH];
+       assign c2[i+2]=-H2[(i+1)*WIDTH-1:i*WIDTH];
+       assign c3[i+4]=-H3[(i+1)*WIDTH-1:i*WIDTH];
        end
        
        
@@ -104,6 +119,68 @@ else if(en)
  end
 else 
   count<=0;
+end
+
+always@(posedge clk)
+begin
+if(!rst)
+c_n<=0;
+else if(en)
+c_n<=c_n+1;
+else
+c_n<=0;
+end
+
+always@(posedge clk)
+begin
+if(!rst)
+begin
+G1<=0;
+G2<=0;
+G3<=0;
+end
+else if(en)
+    begin
+        if(c_n==4)
+            begin
+                G1[3*WIDTH-1:2*WIDTH]<=P11;
+            end
+        else if(c_n==5)
+            begin
+                G2[3*WIDTH-1:2*WIDTH]<=P21; 
+                G1[2*WIDTH-1:1*WIDTH]<=-P21;
+            end
+        else if(c_n==6)
+            begin
+                 G3[3*WIDTH-1:2*WIDTH]<=P31;
+                 G2[2*WIDTH-1:1*WIDTH]<=P22; 
+                 G1[1*WIDTH-1:0*WIDTH]<=-P31;
+            end
+        else if(c_n==7)
+            begin
+                 G3[2*WIDTH-1:1*WIDTH]<=P32; 
+                 G2[1*WIDTH-1:0*WIDTH]<=-P32; 
+            end
+        else if(c_n==8)
+            begin
+                G3[1*WIDTH-1:0*WIDTH]<=P33;
+            end
+        else
+            begin
+            G1<=0;
+            G2<=0;
+            G3<=0;
+            
+            end
+    end
+
+else
+    begin
+        G1<=0;
+        G2<=0;
+        G3<=0;
+    end
+
 end
 
 endmodule
